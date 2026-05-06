@@ -5,234 +5,424 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SEC Sentiment Analyzer</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: #0f172a;
       color: #e2e8f0;
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     header {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      border-bottom: 1px solid #1e40af33;
-      padding: 3rem 2rem 2rem;
+      padding: 2rem 2rem 1.5rem;
       text-align: center;
+      border-bottom: 1px solid #1e293b;
     }
 
     header h1 {
-      font-size: 2.4rem;
+      font-size: 1.9rem;
       font-weight: 700;
       background: linear-gradient(90deg, #60a5fa, #a78bfa);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 0.75rem;
     }
 
     header p {
-      color: #94a3b8;
-      font-size: 1.05rem;
-      max-width: 600px;
+      color: #64748b;
+      margin-top: 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    /* ── Model loader bar ── */
+    #loader-wrap {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 0.75rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    #loader-wrap.hidden { display: none; }
+
+    #loader-label { font-size: 0.85rem; color: #94a3b8; white-space: nowrap; min-width: 260px; }
+
+    #bar-track {
+      flex: 1;
+      height: 8px;
+      background: #0f172a;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    #bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #3b82f6, #a78bfa);
+      border-radius: 9999px;
+      transition: width 0.3s;
+    }
+
+    /* ── Main layout ── */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem 2rem;
+      max-width: 1200px;
+      width: 100%;
       margin: 0 auto;
     }
 
-    .badge-row {
-      display: flex;
-      justify-content: center;
-      gap: 0.6rem;
-      margin-top: 1.2rem;
-      flex-wrap: wrap;
+    @media (max-width: 768px) {
+      main { grid-template-columns: 1fr; }
     }
 
-    .badge {
+    .panel {
       background: #1e293b;
       border: 1px solid #334155;
-      border-radius: 9999px;
-      padding: 0.3rem 0.85rem;
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .panel h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #60a5fa;
+    }
+
+    /* File drop zone */
+    #drop-zone {
+      border: 2px dashed #334155;
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    #drop-zone:hover, #drop-zone.dragover {
+      border-color: #3b82f6;
+      background: #1e3a5f22;
+      color: #93c5fd;
+    }
+
+    #drop-zone svg { display: block; margin: 0 auto 0.5rem; opacity: 0.5; }
+
+    #file-input { display: none; }
+
+    #file-name {
       font-size: 0.8rem;
       color: #94a3b8;
+      min-height: 1.2em;
     }
 
-    main {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 3rem 1.5rem;
-    }
-
-    .screenshot-block {
-      text-align: center;
-      margin-bottom: 3.5rem;
-    }
-
-    .screenshot-block img {
+    select, textarea {
       width: 100%;
-      max-width: 860px;
-      border-radius: 12px;
-      border: 1px solid #1e3a5f;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-    }
-
-    h2 {
-      font-size: 1.35rem;
-      font-weight: 600;
-      color: #60a5fa;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
-      margin-bottom: 3rem;
-    }
-
-    .card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 10px;
-      padding: 1.25rem;
-    }
-
-    .card .icon {
-      font-size: 1.6rem;
-      margin-bottom: 0.6rem;
-    }
-
-    .card h3 {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #e2e8f0;
-      margin-bottom: 0.35rem;
-    }
-
-    .card p {
-      font-size: 0.85rem;
-      color: #64748b;
-      line-height: 1.5;
-    }
-
-    .code-block {
       background: #0f172a;
-      border: 1px solid #1e3a5f;
-      border-radius: 10px;
-      padding: 1.4rem 1.6rem;
-      margin-bottom: 3rem;
-      overflow-x: auto;
-    }
-
-    .code-block pre {
-      font-family: "Cascadia Code", "Fira Code", "Courier New", monospace;
-      font-size: 0.9rem;
-      line-height: 1.7;
-      color: #7dd3fc;
-    }
-
-    .code-block .comment { color: #475569; }
-    .code-block .cmd     { color: #a78bfa; }
-
-    .cta {
-      text-align: center;
-      padding: 2rem 0;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: linear-gradient(135deg, #3b82f6, #6366f1);
-      color: #fff;
-      text-decoration: none;
-      padding: 0.75rem 1.8rem;
+      border: 1px solid #334155;
       border-radius: 8px;
-      font-weight: 600;
+      color: #e2e8f0;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.875rem;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    select:focus, textarea:focus { border-color: #3b82f6; }
+
+    select { cursor: pointer; }
+
+    label { font-size: 0.8rem; color: #94a3b8; }
+
+    textarea { min-height: 180px; line-height: 1.5; }
+
+    /* Right panel */
+    #custom-text { min-height: 160px; }
+
+    #analyze-btn {
+      width: 100%;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
       font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
       transition: opacity 0.2s;
     }
 
-    .btn:hover { opacity: 0.85; }
+    #analyze-btn:hover:not(:disabled) { opacity: 0.85; }
+
+    #analyze-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    #result-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.9rem;
+      min-height: 100px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #94a3b8;
+      white-space: pre-wrap;
+      flex: 1;
+    }
+
+    #result-box.has-result { color: #e2e8f0; }
+
+    .sentiment-positive { color: #4ade80; font-weight: 700; }
+    .sentiment-negative { color: #f87171; font-weight: 700; }
+    .sentiment-neutral  { color: #facc15; font-weight: 700; }
 
     footer {
       text-align: center;
-      padding: 2rem;
+      padding: 1rem;
+      font-size: 0.75rem;
       color: #334155;
-      font-size: 0.8rem;
       border-top: 1px solid #1e293b;
     }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #ffffff44;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>SEC Sentiment Analyzer</h1>
-  <p>Upload any SEC filing and get instant sentiment analysis powered by <strong>Qwen2-0.5B-Instruct</strong> — no API key, runs 100 % locally.</p>
-  <div class="badge-row">
-    <span class="badge">Qwen2-0.5B-Instruct</span>
-    <span class="badge">Gradio UI</span>
-    <span class="badge">Runs locally</span>
-    <span class="badge">Python 3.9+</span>
-    <span class="badge">.txt / .pdf / .htm</span>
-  </div>
+  <h1>SEC Filing Sentiment Analyzer</h1>
+  <p>Powered by <strong>Qwen2.5-0.5B-Instruct</strong> — runs entirely in your browser, no server needed.</p>
 </header>
 
+<!-- Model loading bar -->
+<div id="loader-wrap">
+  <span id="loader-label">Loading model… (first visit downloads ~350 MB, cached after)</span>
+  <div id="bar-track"><div id="bar-fill"></div></div>
+</div>
+
 <main>
+  <!-- LEFT PANEL -->
+  <div class="panel">
+    <h2>Input</h2>
 
-  <div class="screenshot-block">
-    <img src="screenshot.png" alt="App screenshot" />
+    <!-- Drop zone -->
+    <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+      </svg>
+      Upload SEC File (.txt or .htm)
+    </div>
+    <input type="file" id="file-input" accept=".txt,.htm,.html" />
+    <span id="file-name"></span>
+
+    <label for="section-select">Section</label>
+    <select id="section-select" disabled>
+      <option value="">— upload a file first —</option>
+    </select>
+
+    <label for="preview">Preview (first 3 000 chars)</label>
+    <textarea id="preview" readonly placeholder="File content will appear here…"></textarea>
   </div>
 
-  <h2>Features</h2>
-  <div class="card-grid">
-    <div class="card">
-      <div class="icon">📄</div>
-      <h3>Multi-format upload</h3>
-      <p>Accepts .txt, .pdf, and .htm SEC filings directly from EDGAR.</p>
-    </div>
-    <div class="card">
-      <div class="icon">🔍</div>
-      <h3>Section detection</h3>
-      <p>Auto-detects Item 1, Item 1A, Item 7, and other named sections for targeted analysis.</p>
-    </div>
-    <div class="card">
-      <div class="icon">🧠</div>
-      <h3>Local LLM</h3>
-      <p>Uses Qwen2-0.5B-Instruct via Hugging Face Transformers — no external API needed.</p>
-    </div>
-    <div class="card">
-      <div class="icon">📊</div>
-      <h3>Sentiment + reason</h3>
-      <p>Returns Positive / Negative / Neutral with a one-sentence justification.</p>
-    </div>
+  <!-- RIGHT PANEL -->
+  <div class="panel">
+    <h2>Analysis</h2>
+
+    <label for="custom-text">Or paste text directly (overrides section selection)</label>
+    <textarea id="custom-text" placeholder="Paste any SEC text here…"></textarea>
+
+    <button id="analyze-btn" disabled>Analyze Sentiment</button>
+
+    <label>Result</label>
+    <div id="result-box">Sentiment result will appear here.</div>
   </div>
-
-  <h2>Quick Start</h2>
-  <div class="code-block">
-    <pre><span class="comment"># 1. Clone</span>
-<span class="cmd">git clone</span> https://github.com/a01752891/sec-sentiment-app.git
-<span class="cmd">cd</span> sec-sentiment-app
-
-<span class="comment"># 2. Install dependencies</span>
-<span class="cmd">pip install</span> -r requirements.txt
-
-<span class="comment"># 3. Run — model downloads automatically on first launch (~1 GB)</span>
-<span class="cmd">python</span> app.py</pre>
-  </div>
-
-  <div class="cta">
-    <a class="btn" href="https://github.com/a01752891/sec-sentiment-app" target="_blank">
-      View on GitHub
-    </a>
-  </div>
-
 </main>
 
-<footer>
-  Built with Qwen2-0.5B-Instruct · Gradio · Hugging Face Transformers
-</footer>
+<footer>Qwen2.5-0.5B-Instruct · transformers.js · runs 100 % in your browser</footer>
 
+<script type="module">
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.2';
+
+// ── Config ──────────────────────────────────────────────────────────────────
+const MODEL_ID  = 'onnx-community/Qwen2.5-0.5B-Instruct';
+const MAX_CHARS = 1800;   // chars sent to model (keeps prompt within context)
+
+env.allowLocalModels = false;
+
+// ── DOM refs ─────────────────────────────────────────────────────────────────
+const loaderWrap   = document.getElementById('loader-wrap');
+const loaderLabel  = document.getElementById('loader-label');
+const barFill      = document.getElementById('bar-fill');
+const fileInput    = document.getElementById('file-input');
+const dropZone     = document.getElementById('drop-zone');
+const fileNameEl   = document.getElementById('file-name');
+const sectionSel   = document.getElementById('section-select');
+const previewEl    = document.getElementById('preview');
+const customText   = document.getElementById('custom-text');
+const analyzeBtn   = document.getElementById('analyze-btn');
+const resultBox    = document.getElementById('result-box');
+
+let pipe = null;
+let sections = {};
+
+// ── Load model ───────────────────────────────────────────────────────────────
+(async () => {
+  try {
+    pipe = await pipeline('text-generation', MODEL_ID, {
+      dtype: 'q4',
+      device: 'webgpu',
+      progress_callback: (p) => {
+        if (p.status === 'progress' && p.total) {
+          const pct = Math.round((p.loaded / p.total) * 100);
+          barFill.style.width = pct + '%';
+          loaderLabel.textContent = `Downloading model: ${pct}%  (${(p.loaded/1e6).toFixed(0)} / ${(p.total/1e6).toFixed(0)} MB)`;
+        }
+      },
+    });
+  } catch (_) {
+    // WebGPU not available — fall back to WASM
+    pipe = await pipeline('text-generation', MODEL_ID, {
+      dtype: 'q4',
+      device: 'wasm',
+      progress_callback: (p) => {
+        if (p.status === 'progress' && p.total) {
+          const pct = Math.round((p.loaded / p.total) * 100);
+          barFill.style.width = pct + '%';
+          loaderLabel.textContent = `Downloading model (CPU): ${pct}%`;
+        }
+      },
+    });
+  }
+
+  barFill.style.width = '100%';
+  loaderLabel.textContent = 'Model ready ✓';
+  setTimeout(() => loaderWrap.classList.add('hidden'), 1500);
+  analyzeBtn.disabled = false;
+})();
+
+// ── File parsing ─────────────────────────────────────────────────────────────
+async function parseFile(file) {
+  const name = file.name.toLowerCase();
+  const text = await file.text();
+  if (name.endsWith('.htm') || name.endsWith('.html')) {
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    doc.querySelectorAll('script, style').forEach(el => el.remove());
+    return (doc.body.innerText || doc.body.textContent || '').replace(/\s{3,}/g, '\n\n').trim();
+  }
+  return text;
+}
+
+function detectSections(text) {
+  const re = /(?:ITEM|Item)\s+\d+[A-Z]?\.?\s+\S[^\n]{4,60}/g;
+  const matches = [...text.matchAll(re)];
+  const result = { 'Full Document': text };
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].index;
+    const end   = i + 1 < matches.length ? matches[i + 1].index : Math.min(start + 6000, text.length);
+    result[matches[i][0].trim().slice(0, 70)] = text.slice(start, end);
+  }
+  return result;
+}
+
+// ── File upload ──────────────────────────────────────────────────────────────
+async function handleFile(file) {
+  if (!file) return;
+  fileNameEl.textContent = file.name;
+  const text = await parseFile(file);
+  sections = detectSections(text);
+
+  sectionSel.innerHTML = '';
+  for (const name of Object.keys(sections)) {
+    const opt = document.createElement('option');
+    opt.value = opt.textContent = name;
+    sectionSel.appendChild(opt);
+  }
+  sectionSel.disabled = false;
+  previewEl.value = sections['Full Document'].slice(0, 3000);
+}
+
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop',      e  => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+sectionSel.addEventListener('change', () => {
+  const s = sections[sectionSel.value];
+  if (s) previewEl.value = s.slice(0, 3000);
+});
+
+// ── Sentiment analysis ───────────────────────────────────────────────────────
+analyzeBtn.addEventListener('click', async () => {
+  let text = customText.value.trim();
+  if (!text) text = (sections[sectionSel.value] || '').trim();
+  if (!text) { resultBox.textContent = 'Please upload a file or paste text first.'; return; }
+
+  if (text.length > MAX_CHARS) text = text.slice(0, MAX_CHARS) + '\n[...truncated...]';
+
+  analyzeBtn.disabled = true;
+  analyzeBtn.innerHTML = '<span class="spinner"></span>Analyzing…';
+  resultBox.className = '';
+  resultBox.textContent = 'Running model…';
+
+  try {
+    const messages = [{
+      role: 'user',
+      content:
+        'Analyze the sentiment of the following SEC filing excerpt.\n' +
+        'Classify it as Positive, Negative, or Neutral and give a brief one-sentence reason.\n\n' +
+        'Text:\n' + text + '\n\n' +
+        'Reply in exactly this format:\n' +
+        'Sentiment: [Positive / Negative / Neutral]\n' +
+        'Reason: [one sentence]'
+    }];
+
+    const out = await pipe(messages, { max_new_tokens: 120, do_sample: false });
+    const raw = out[0].generated_text.at(-1).content.trim();
+
+    // Highlight sentiment word
+    const colored = raw.replace(
+      /(Positive|Negative|Neutral)/,
+      (m) => `<span class="sentiment-${m.toLowerCase()}">${m}</span>`
+    );
+    resultBox.innerHTML = colored;
+    resultBox.classList.add('has-result');
+  } catch (err) {
+    resultBox.textContent = 'Error: ' + err.message;
+  }
+
+  analyzeBtn.disabled = false;
+  analyzeBtn.textContent = 'Analyze Sentiment';
+});
+</script>
 </body>
 </html>
