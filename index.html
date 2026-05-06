@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEC Sentiment Analyzer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border-bottom: 1px solid #1e40af33;
+      padding: 3rem 2rem 2rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.75rem;
+    }
+
+    header p {
+      color: #94a3b8;
+      font-size: 1.05rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .badge-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-top: 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 9999px;
+      padding: 0.3rem 0.85rem;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+
+    .screenshot-block {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+
+    .screenshot-block img {
+      width: 100%;
+      max-width: 860px;
+      border-radius: 12px;
+      border: 1px solid #1e3a5f;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #60a5fa;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .card .icon {
+      font-size: 1.6rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 0.35rem;
+    }
+
+    .card p {
+      font-size: 0.85rem;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    .code-block {
+      background: #0f172a;
+      border: 1px solid #1e3a5f;
+      border-radius: 10px;
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 3rem;
+      overflow-x: auto;
+    }
+
+    .code-block pre {
+      font-family: "Cascadia Code", "Fira Code", "Courier New", monospace;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      color: #7dd3fc;
+    }
+
+    .code-block .comment { color: #475569; }
+    .code-block .cmd     { color: #a78bfa; }
+
+    .cta {
+      text-align: center;
+      padding: 2rem 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      color: #fff;
+      text-decoration: none;
+      padding: 0.75rem 1.8rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover { opacity: 0.85; }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #334155;
+      font-size: 0.8rem;
+      border-top: 1px solid #1e293b;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>SEC Sentiment Analyzer</h1>
+  <p>Upload any SEC filing and get instant sentiment analysis powered by <strong>Qwen2-0.5B-Instruct</strong> — no API key, runs 100 % locally.</p>
+  <div class="badge-row">
+    <span class="badge">Qwen2-0.5B-Instruct</span>
+    <span class="badge">Gradio UI</span>
+    <span class="badge">Runs locally</span>
+    <span class="badge">Python 3.9+</span>
+    <span class="badge">.txt / .pdf / .htm</span>
+  </div>
+</header>
+
+<main>
+
+  <div class="screenshot-block">
+    <img src="screenshot.png" alt="App screenshot" />
+  </div>
+
+  <h2>Features</h2>
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon">📄</div>
+      <h3>Multi-format upload</h3>
+      <p>Accepts .txt, .pdf, and .htm SEC filings directly from EDGAR.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔍</div>
+      <h3>Section detection</h3>
+      <p>Auto-detects Item 1, Item 1A, Item 7, and other named sections for targeted analysis.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🧠</div>
+      <h3>Local LLM</h3>
+      <p>Uses Qwen2-0.5B-Instruct via Hugging Face Transformers — no external API needed.</p>
+    </div>
+    <div class="card">
+      <div class="icon">📊</div>
+      <h3>Sentiment + reason</h3>
+      <p>Returns Positive / Negative / Neutral with a one-sentence justification.</p>
+    </div>
+  </div>
+
+  <h2>Quick Start</h2>
+  <div class="code-block">
+    <pre><span class="comment"># 1. Clone</span>
+<span class="cmd">git clone</span> https://github.com/a01752891/sec-sentiment-app.git
+<span class="cmd">cd</span> sec-sentiment-app
+
+<span class="comment"># 2. Install dependencies</span>
+<span class="cmd">pip install</span> -r requirements.txt
+
+<span class="comment"># 3. Run — model downloads automatically on first launch (~1 GB)</span>
+<span class="cmd">python</span> app.py</pre>
+  </div>
+
+  <div class="cta">
+    <a class="btn" href="https://github.com/a01752891/sec-sentiment-app" target="_blank">
+      View on GitHub
+    </a>
+  </div>
+
+</main>
+
+<footer>
+  Built with Qwen2-0.5B-Instruct · Gradio · Hugging Face Transformers
+</footer>
+
+</body>
+</html>
